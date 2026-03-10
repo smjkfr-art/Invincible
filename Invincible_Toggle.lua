@@ -5,6 +5,7 @@
     - God Mode ON/OFF toggle
     - Health always max (never die)
     - R6 + R15 support
+    - Server-side health restoration for all players
 ]]
 
 local Players = game:GetService("Players")
@@ -36,7 +37,7 @@ button.Parent = gui
 
 
 -------------------------------------------------
--- GOD MODE LOGIC
+-- GOD MODE LOGIC (Client-side)
 -------------------------------------------------
 local function applyGodMode(character)
     local humanoid = character:WaitForChild("Humanoid")
@@ -74,4 +75,28 @@ end
 button.MouseButton1Click:Connect(function()
     GODMODE = not GODMODE
     button.Text = "God Mode: " .. (GODMODE and "ON" or "OFF")
+end)
+
+
+-------------------------------------------------
+-- SERVER-SIDE HEALTH RESTORATION (All Players)
+-------------------------------------------------
+Players.PlayerAdded:Connect(function(newPlayer)
+    newPlayer.CharacterAdded:Connect(function(char)
+        local hum = char:WaitForChild("Humanoid")
+
+        hum.HealthChanged:Connect(function(h)
+            if hum.Health < hum.MaxHealth then
+                hum.Health = hum.MaxHealth
+            end
+        end)
+
+        task.spawn(function()
+            while hum.Parent do
+                hum.MaxHealth = math.huge
+                hum.Health = hum.MaxHealth
+                task.wait(0.03)
+            end
+        end)
+    end)
 end)
